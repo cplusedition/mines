@@ -1,0 +1,44 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558 
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "typescript",
+            "tsconfig": "tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "bot-tsc",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "command": "tsc -t ES3 -m commonjs --outDir out --sourceMap --pretty --strict --alwaysStrict --strictNullChecks --noImplicitThis --noImplicitReturns --noImplicitAny --allowJs src/*.ts src/*.js",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "bot-runner",
+            "type": "shell",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "command": "node out/botrunner.js ${fileBasenameNoExtension} ${selectedText}",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        }
+    ]
+}
