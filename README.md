@@ -16,4 +16,6 @@ First of all, pull dependencies with:
 Open the project in vscode. Make sure the `bot-tsc` task is the default build task and the `bot-runner` task is the default test task. Run the build task to build. To package the JS files, you need `browserify` and `uglify-js`. Select the function name `release` in `builder.ts` and run the `bot-runner` test task to create a ready to run distribution in the `mines/` directory.
 
 ## License ##
-Released under Apache License 2.0. See `LICENSE`.
+Released under Apache License 2.0. See [`LICENSE`](LICENSE).
+
+The project use FontAwesome and Ruda-Regular fonts that are distributed under [`http://scripts.sil.org/OFL`](OFL.txt).

@@ -93,7 +93,7 @@ function distImpl() {
     }
     args.push("src/botcore.ts", "src/botnode.ts", "src/botbrowser.ts", "src/botui.ts", "src/botrunner.ts");
     args.push("src/app.js", "src/mines.ts", "src/server.ts", "src/builder.ts");
-    args.push("package.json", "tsconfig.json", "LICENSE.txt", "README.md");
+    args.push("package.json", "tsconfig.json", "README.md", "COPYRIGHT", "LICENSE", "OFL.txt");
     child_process.execFileSync("zip", args);
     log.d(`# See ${zipfile.path()}`);
 }
