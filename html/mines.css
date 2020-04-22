@@ -7,9 +7,9 @@
     src: url('Ruda-Regular.woff2') format('woff2');
 }
 :root {
-    --xx-button-size: 48px;
     --xx-cell-size: 28px;
-    --xx-half: calc(var(--xx-cell-size) / 2);
+    --xx-button-size: calc(var(--xx-cell-size) * 1.75);
+    --xx-half: calc(var(--xx-cell-size) * 0.5);
     --xx-third: calc(var(--xx-cell-size) * 0.4);
 }
 html, input, textarea, keygen, select, button {
@@ -143,6 +143,10 @@ div.x-spinner:before {
 div.x-dialog div.x-vbox {
     font-size: var(--xx-half);
 }
+div.x-dialog div.x-content {
+    width: 100%;
+    padding: 1ex 0;
+}
 
 /* */
 
@@ -198,7 +202,7 @@ table.x-dialog {
     justify-content: center;
     text-align: center;
     box-sizing: border-box;
-    border: 0.5px solid #ccc;
+    border: 1px solid #ccc;
     font-size: var(--xx-third);
     width: var(--xx-cell-size);
     height: var(--xx-cell-size);
@@ -222,4 +226,11 @@ table.x-dialog {
 .xx-bomb:before {
     font-family: FontAwesome;
     content: "\f1e2";
+}
+.xx-cheats-used {
+    font-size: 80%;
+}
+.xx-cheats-avail {
+    font-size: 80%;
+    color: #aaa;
 }

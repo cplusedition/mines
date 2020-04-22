@@ -9,9 +9,9 @@
   PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
 */
 
-import { K, ConfirmationDialog, DomUt, ClickDetector, InfoDialog } from "./botui";
-import { Attrs, RandUt, StringMap, Ut } from "./botcore";
-import { DomBuilder } from "./botbrowser";
+import { Attrs, RandUt, StringMap, Ut } from "./bot/botcore";
+import { DomBuilder } from "./bot/botbrowser";
+import { K, ConfirmationDialog, DomUt, ClickDetector, InfoDialog } from "./bot/botui";
 
 class MK {
     static readonly _DEF_CELLSIZE = 28;
@@ -58,6 +58,8 @@ class MK {
     static readonly xxFlag = "xx-flag";
     static readonly xxBomb = "xx-bomb";
     static readonly xxWrong = "xx-wrong";
+    static readonly xxCheatsUsed = "xx-cheats-used";
+    static readonly xxCheatsAvail = "xx-cheats-avail";
     static readonly xxGameover = "xx-gameover";
     //
     static readonly classes_ = (() => {
@@ -193,7 +195,7 @@ export class MinesGame {
             }
         });
         const self = this;
-        new ClickDetector(this._map, (target, x, y, distance) => {
+        new ClickDetector(this._map, (target, _x, _y, distance) => {
             if (self._state._gameover) {
                 setTimeout(() => {
                     self.newGame(self._state._mapSize, self._state._difficulty);
@@ -207,6 +209,17 @@ export class MinesGame {
                 self.cellCallback_(target);
             }
         });
+    }
+
+    static startGame() {
+        let url = new URL(window.location.href);
+        let cellsize = Ut.parseInt_(url.searchParams.get("c"), MK._DEF_CELLSIZE);
+        let difficulty = Ut.parseInt_(url.searchParams.get("d"), MK._DEF_DIFFICULTY);
+        let root = document.querySelector(":root")
+        if (root != null && root instanceof HTMLElement) {
+            root.style.setProperty("--xx-cell-size", `${cellsize}px`);
+        }
+        new MinesGame(cellsize).newGame(MK._DEF_MAPSIZE, difficulty);
     }
 
     newGame(mapsize: number = MK._DEF_MAPSIZE, difficulty: number = MK._DEF_DIFFICULTY, saved: string | null = null) {
@@ -248,8 +261,8 @@ export class MinesGame {
         DomUt.setVisible_(this._top);
         new InfoDialog(document.body,
             Math.ceil(this._cellSize * 4 / 3),
-            MSG.string_(RS.GameMinesInstruction),
-            () => { }).show_();
+            MSG.string_(RS.GameMinesInstruction))
+            .show_();
     }
 
     saveGame(): string | null {
@@ -456,16 +469,14 @@ export class MinesGame {
         if (this._state._cheats > 0) {
             let cheats = Ut.repeatString_(MK._CHEAT, this._state._cheats);
             b.peek_().child_("span", {
-                "class": K.xSymbol,
-                "style": "font-size:80%;",
+                "class": `${K.xSymbol} ${MK.xxCheatsUsed}`,
             }).text_(cheats)
         }
         let max = this.maxCheats_();
         if (this._state._cheats < max) {
             let left = Ut.repeatString_(MK._CHEAT, max - this._state._cheats);
             b.peek_().child_("span", {
-                "class": K.xSymbol,
-                "style": "font-size:80%;color:#aaa;",
+                "class": `${K.xSymbol} ${MK.xxCheatsAvail}`,
             }).text_(left)
         }
     }
@@ -533,7 +544,7 @@ export class MinesGame {
             classlist.add(MK.xxOpen);
             classlist.add(MK.xxBomb);
             classlist.add(MK.xxGameover);
-            this.gameover_(classlist);
+            this.gameover_();
             return;
         }
         this.open1(row, col, cell, classlist);
@@ -543,7 +554,7 @@ export class MinesGame {
         this._label.textContent = MSG.string_(msgid);
     }
 
-    private gameover_(classlist: DOMTokenList): void {
+    private gameover_(): void {
         this._state._gameover = true;
         this._map.classList.add(MK.xxGameover);
         this._label.classList.add(MK.xxGameover);
@@ -573,5 +584,6 @@ export class MinesGame {
             }
         }
     }
-
 }
+
+MinesGame.startGame();

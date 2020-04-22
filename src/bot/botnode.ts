@@ -94,92 +94,6 @@ export class Filepath extends Basepath {
         return this.path().substring(this.basedir.length);
     }
 
-    async stat(): Promise<fs.Stats | null> {
-        return new Promise((resolve, reject) => {
-            fs.stat(this.path(), (err, stat) => {
-                if (err) resolve(null);
-                else resolve(stat);
-            });
-        });
-    }
-
-    async lstat(): Promise<fs.Stats | null> {
-        return new Promise((resolve, reject) => {
-            fs.lstat(this.path(), (err, stat) => {
-                if (err) resolve(null);
-                else resolve(stat);
-            });
-        });
-    }
-
-    async isDirectory(): Promise<boolean> {
-        return this._lstat((stat) => {
-            return stat != null && stat.isDirectory();
-        });
-    }
-
-    async isFile(): Promise<boolean> {
-        return this._lstat((stat) => {
-            return stat != null && stat.isFile();
-        });
-    }
-
-    async isSymbolicLink(): Promise<boolean> {
-        return this._lstat((stat) => {
-            return stat != null && stat.isSymbolicLink();
-        });
-    }
-
-    async size(): Promise<number> {
-        return this._lstat((stat) => {
-            return stat != null ? stat.size : 0;
-        });
-    }
-
-    async mtime(): Promise<Date> {
-        return this._lstat((stat) => {
-            return stat != null ? stat.mtime : new Date(0);
-        });
-    }
-
-    async mtimeMs(): Promise<number> {
-        return this._lstat((stat) => {
-            return stat != null ? stat.mtimeMs : 0;
-        });
-    }
-
-    async canRead(): Promise<boolean> {
-        return this._access(fs.constants.R_OK);
-    }
-
-    async canWrite(): Promise<boolean> {
-        return this._access(fs.constants.W_OK);
-    }
-
-    async mkdir(options?: number | string | fs.MakeDirectoryOptions | undefined | null): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this.isDirectory().then((yes) => {
-                if (yes) {
-                    resolve(true);
-                    return;
-                }
-                fs.mkdir(this.path(), options, (err) => {
-                    resolve(!err);
-                });
-            });
-        });
-    }
-
-    async existsOrFail(): Promise<Filepath | never> {
-        const self = this;
-        return new Promise((resolve, reject) => {
-            this._access(fs.constants.F_OK).then((ok) => {
-                if (ok) resolve(self)
-                else reject();
-            });
-        });
-    }
-
     file(...segments: string[]): Filepath {
         return new Filepath(this.path(), segments.join(Path.sep));
     }
@@ -191,6 +105,11 @@ export class Filepath extends Basepath {
         } catch (e) {
             return false;
         }
+    }
+
+    existsSyncOrFail(): Filepath | never {
+        fs.accessSync(this.path(), fs.constants.F_OK);
+        return this;
     }
 
     lstatSync(): fs.Stats {
@@ -252,14 +171,17 @@ export class Filepath extends Basepath {
         return true;
     }
 
-    copyFileSync(tofile: string, mode?: number): void {
+    copyFileSync(tofile: string, mode?: number) {
         fs.copyFileSync(this.path(), new Filepath(tofile).mkparentSync(mode).path());
+    }
+
+    copyFileToDirSync(todir: Filepath, mode?: number) {
+        fs.copyFileSync(this.path(), todir.mkdirsSync(mode).file(this.base()).path());
     }
 
     /// @return Number of files, not including directories, copied.
     copyDirSync(todir: string, mode?: number): number {
         let ret = 0;
-        const self = this;
         const dstdir = new Filepath(todir);
         this.walkSync((src, rpath, stat) => {
             const dst = dstdir.file(rpath);
@@ -278,7 +200,7 @@ export class Filepath extends Basepath {
         return fs.readFileSync(this.path()).toString();
     }
 
-    writeTextSync(data: string, options?: fs.WriteFileOptions): void {
+    writeTextSync(data: string, options?: fs.WriteFileOptions) {
         fs.writeFileSync(this.path(), data, options);
     }
 
@@ -304,15 +226,8 @@ export class Filepath extends Basepath {
         this.walkSync1("", this.lstatSync(), callback);
     }
 
-    private walkSync1(dir: string, stat: fs.Stats, callback: FileWalkerSyncCallback) {
-        if (!stat.isDirectory()) return;
-        for (const name of this.listOrEmptySync().sort()) {
-            const file = new Filepath(this.path(), name);
-            const filepath = dir.length == 0 ? name : dir + Path.sep + name;
-            const stat = file.lstatSync();
-            callback(file, filepath, stat);
-            file.walkSync1(filepath, stat, callback);
-        }
+    scanSync(callback: (filepath: Filepath, rpath: string, stat: fs.Stats) => boolean) {
+        this.scanSync1("", this.lstatSync(), callback);
     }
 
     walkAsync(callback: FileWalkerAsyncCallback, done: Fun00) {
@@ -322,6 +237,103 @@ export class Filepath extends Basepath {
             return;
         }
         this.walkAsync1(this.listOrEmptySync().sort(), 0, "", callback, done);
+    }
+
+    async stat(): Promise<fs.Stats | null> {
+        return new Promise((resolve, _reject) => {
+            fs.stat(this.path(), (err, stat) => {
+                if (err) resolve(null);
+                else resolve(stat);
+            });
+        });
+    }
+
+    async lstat(): Promise<fs.Stats | null> {
+        return new Promise((resolve, _reject) => {
+            fs.lstat(this.path(), (err, stat) => {
+                if (err) resolve(null);
+                else resolve(stat);
+            });
+        });
+    }
+
+    async isDirectory(): Promise<boolean> {
+        return this._lstat((stat) => {
+            return stat != null && stat.isDirectory();
+        });
+    }
+
+    async isFile(): Promise<boolean> {
+        return this._lstat((stat) => {
+            return stat != null && stat.isFile();
+        });
+    }
+
+    async isSymbolicLink(): Promise<boolean> {
+        return this._lstat((stat) => {
+            return stat != null && stat.isSymbolicLink();
+        });
+    }
+
+    async size(): Promise<number> {
+        return this._lstat((stat) => {
+            return stat != null ? stat.size : 0;
+        });
+    }
+
+    async mtime(): Promise<Date> {
+        return this._lstat((stat) => {
+            return stat != null ? stat.mtime : new Date(0);
+        });
+    }
+
+    async mtimeMs(): Promise<number> {
+        return this._lstat((stat) => {
+            return stat != null ? stat.mtimeMs : 0;
+        });
+    }
+
+    async canRead(): Promise<boolean> {
+        return this._access(fs.constants.R_OK);
+    }
+
+    async canWrite(): Promise<boolean> {
+        return this._access(fs.constants.W_OK);
+    }
+
+    async mkdir(options?: number | string | fs.MakeDirectoryOptions | undefined | null): Promise<boolean> {
+        return new Promise((resolve, _reject) => {
+            this.isDirectory().then((yes) => {
+                if (yes) {
+                    resolve(true);
+                    return;
+                }
+                fs.mkdir(this.path(), options, (err) => {
+                    resolve(!err);
+                });
+            });
+        });
+    }
+
+    async existsOrFail(): Promise<Filepath | never> {
+        const self = this;
+        return new Promise((resolve, reject) => {
+            this._access(fs.constants.F_OK).then((ok) => {
+                if (ok) resolve(self)
+                else reject();
+            });
+        });
+    }
+
+    private walkSync1(dir: string, stat: fs.Stats, callback: FileWalkerSyncCallback) {
+        if (!stat.isDirectory()) return;
+        for (const name of this.listOrEmptySync().sort()) {
+            const file = new Filepath(this.path(), name);
+            const filepath = dir.length == 0 ? name : dir + Path.sep + name;
+            const stat = file.lstatSync();
+            callback(file, filepath, stat);
+            file.walkSync1(filepath, stat, callback);
+        }
     }
 
     private walkAsync1(entries: string[], index: number, dirpath: string, callback: FileWalkerAsyncCallback, done: Fun00) {
@@ -347,10 +359,6 @@ export class Filepath extends Basepath {
         });
     }
 
-    scanSync(callback: (filepath: Filepath, rpath: string, stat: fs.Stats) => boolean) {
-        this.scanSync1("", this.lstatSync(), callback);
-    }
-
     private scanSync1(dir: string, stat: fs.Stats, callback: (filepath: Filepath, rpath: string, stat: fs.Stats) => boolean) {
         if (!stat.isDirectory()) return;
         for (const name of fs.readdirSync(this.path()).sort()) {
@@ -362,7 +370,7 @@ export class Filepath extends Basepath {
     }
 
     private _access(mode: number): Promise<boolean> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             fs.access(this.path(), mode, (err) => {
                 return resolve(err == null);
             });
@@ -370,7 +378,7 @@ export class Filepath extends Basepath {
     }
 
     private _lstat<T>(callback: (stat: fs.Stats | null) => T): Promise<T> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             fs.lstat(this.path(), (err, stat) => {
                 if (err) resolve(callback(null));
                 else resolve(callback(stat));

@@ -19,18 +19,20 @@ export class BotRunner {
         console.log("Usage: ${process.execPath} [-h] <filename> <testname>");
     }
 
-    static run(): number {
+    static run(): void {
         let filename = process.argv[2];
         let testname = process.argv[3];
-        if (!filename) {
+        if (!filename || !testname) {
             BotRunner.usage();
-            return 2;
+            return;
         }
-        if (!testname) {
-            BotRunner.usage();
-            return 3;
+        const t = require(`./${filename}`);
+        const f: any | null | undefined = t[testname];
+        if (f instanceof Function) {
+            f.apply(t);
+        } else {
+            throw new Error(`Function ${testname}() not found.`)
         }
-        return eval(`const t = require('./${filename}'); t.${testname}();`);
     }
 }
 

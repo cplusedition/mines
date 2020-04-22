@@ -7,8 +7,18 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceFolder}/out/mines.js"
+            "name": "server",
+            "program": "${workspaceFolder}/out/server.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "bot-runner",
+            "program": "${workspaceFolder}/out/bot/botrunner.js",
+            "args" : [
+                "../${fileBasenameNoExtension}",
+                "${selectedText}"
+            ] 
         },
     ]
 }

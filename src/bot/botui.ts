@@ -21,6 +21,7 @@ export class K {
     static readonly xSymbol = "x-symbol";
     static readonly xVbox = "x-vbox";
     static readonly xHbox = "x-hbox";
+    static readonly xContent = "x-content";
     static readonly xToolbar = "x-toolbar";
     static readonly xDisabled = "x-disabled";
     static readonly xSelected = "x-selected";
@@ -233,7 +234,7 @@ export class Spinner extends Smokescreen {
     private _showTimer: number | null = null;
 
     constructor(container: HTMLElement) {
-        super(container, 9999, 0.25, (e: UIEvent) => { });
+        super(container, 9999, 0.25, (_e: UIEvent) => { });
     }
 
     show_(callback?: SmokescreenCallback_): this {
@@ -256,7 +257,7 @@ export class Spinner extends Smokescreen {
                     if (callback != null) {
                         window.setTimeout(() => {
                             callback(this);
-                        }, 0);
+                        }, delay);
                     }
                 });
             }
@@ -331,7 +332,7 @@ export abstract class DialogBase {
             if (resizer != null) {
                 resizer();
             }
-            this._smokescreen.show_((sm: Smokescreen) => {
+            this._smokescreen.show_((_sm: Smokescreen) => {
                 if (this._dialog != null) DomUt.setVisible_(this._dialog);
             });
         }
@@ -493,7 +494,7 @@ export class InfoDialog extends FixedSizeDialogBase {
 
     readonly _width = 6;
 
-    constructor(container: HTMLElement, buttonsize: number, private _msg: string, private _callback: Fun10<boolean>) {
+    constructor(container: HTMLElement, buttonsize: number, private _msg: string) {
         super(container, buttonsize)
         this._dialog = this.create_(this._container);
         const table = this._dialog.querySelector("table");
@@ -512,9 +513,7 @@ export class InfoDialog extends FixedSizeDialogBase {
 
     createContent_(content: HTMLElement): void {
         const b = new DomBuilder(content).child1_("div", K.xVbox).push_();
-        b.peek_().child_("div", {
-            "style": "width:100%; padding:1ex 0;",
-        });
+        b.peek_().child1_("div", K.xContent);
         for (let line of this._msg.split("\n")) {
             b.text_(line);
             b.append1_("br");
@@ -546,9 +545,7 @@ export class ConfirmationDialog extends FixedSizeDialogBase {
 
     createContent_(content: HTMLElement): void {
         const b = new DomBuilder(content).child1_("div", K.xVbox).push_();
-        b.peek_().child_("div", {
-            "style": "width:100%; padding:1ex 0;",
-        });
+        b.peek_().child1_("div", K.xContent);
         for (let line of this._msg.split("\n")) {
             b.text_(line);
             b.append1_("br");
@@ -562,7 +559,7 @@ export class ConfirmationDialog extends FixedSizeDialogBase {
         });
     }
 
-    onSmokescreenClickEvent_(e: UIEvent): void {
+    onSmokescreenClickEvent_(_e: UIEvent): void {
     }
 }
 

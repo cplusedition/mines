@@ -13,48 +13,57 @@ import * as child_process from "child_process";
 import * as fs from "fs";
 import Path = require("path");
 const browserify = require("browserify");
-import { Fun00, Logger } from "./botcore";
-import { Filepath } from "./botnode";
+import { Fun00, Logger } from "./bot/botcore";
+import { Filepath } from "./bot/botnode";
+
+let log = new Logger(true);
 
 //////////////////////////////////////////////////////////////////////
 
-export function release() {
-    new ReleaseBuilder().run();
+export function pack() {
+    new PackageBuilder().run();
 }
 
-export function dist() {
-    distImpl();
+export function distSrc() {
+    distSrcImpl();
+}
+
+export function clean() {
+    new Filepath("dist").mkdirsSync().rmdirSubtreesSync();
+    new Filepath("mines").mkdirsSync().rmdirSubtreesSync()
+    new Filepath("out").mkdirsSync().rmdirSubtreesSync();
+    log.d("# Clean done.");
 }
 
 //////////////////////////////////////////////////////////////////////
 
-class ReleaseBuilder {
-    private log = new Logger(true);
+class PackageBuilder {
     run() {
         let minesdir = new Filepath("mines").mkdirsSync();
         minesdir.rmdirSubtreesSync();
         this.browsify(() => {
-            new Filepath("html").walkSync((file, rpath, stat) => {
+            new Filepath("html").walkSync((file, rpath, _stat) => {
                 let src = file.path();
                 let dst = minesdir.file(rpath).path();
                 fs.copyFileSync(src, dst);
             });
-            this.log.d("# Done");
+            log.d("# Done");
         });
     }
     browsify(done: Fun00) {
         let b = browserify();
-        b.add("out/botcore.js");
-        b.add("out/botui.js");
+        b.add("out/bot/botcore.js");
+        b.add("out/bot/botui.js");
         b.add("out/mines.js");
-        b.add("out/app.js");
         let out = fs.createWriteStream("mines/mines.js");
         b.bundle().pipe(out).on("close", () => {
-            this.log.d("# browserify OK");
+            log.d("# browserify OK");
             this.uglify(() => {
                 new Filepath("mines/mines.js").rmSync();
                 done();
             });
+            // fs.renameSync("mines/mines.js", "mines/mines-min.js");
+            // done();
         });
     }
     uglify(done: Fun00) {
@@ -68,31 +77,30 @@ class ReleaseBuilder {
         task.stdout.pipe(process.stdout);
         task.stderr.pipe(process.stderr);
         task.on("error", (err: Error) => {
-            this.log.e(`ERROR: ${err}`);
+            log.e(`ERROR: ${err}`);
         }).on("exit", (code: number, signal: string) => {
             if (code != null && code != 0) {
-                this.log.e(`ERROR: uglify failed: ${signal}`);
+                log.e(`ERROR: uglify failed: ${signal}`);
             } else {
-                this.log.d("# Uglify OK");
+                log.d("# Uglify OK");
             }
             done();
         });
     }
 }
 
-function distImpl() {
-    let log = new Logger(true);
+function distSrcImpl() {
     let distdir = new Filepath("dist").mkdirsSync();
-    let zipfile = distdir.file("mines.zip");
+    let zipfile = distdir.file("mines-src.zip");
     zipfile.rmSync();
     let args = ["-ry", zipfile.path()];
     for (let name of [".vscode", "html", "screenshots"]) {
-        Filepath.pwd().file(name).walkSync((file, rpath, stat) => {
+        Filepath.pwd().file(name).walkSync((_file, rpath, _stat) => {
             args.push(Path.join(name, rpath));
         });
     }
-    args.push("src/botcore.ts", "src/botnode.ts", "src/botbrowser.ts", "src/botui.ts", "src/botrunner.ts");
-    args.push("src/app.js", "src/mines.ts", "src/server.ts", "src/builder.ts");
+    args.push("src/bot/botcore.ts", "src/bot/botnode.ts", "src/bot/botbrowser.ts", "src/bot/botrunner.ts", "src/bot/botui.ts");
+    args.push("src/mines.ts", "src/server.ts", "src/builder.ts");
     args.push("package.json", "tsconfig.json", "README.md", "COPYRIGHT", "LICENSE", "OFL.txt");
     child_process.execFileSync("zip", args);
     log.d(`# See ${zipfile.path()}`);
