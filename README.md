@@ -6,6 +6,11 @@ This is a typescript implementation of the mines game, written from scratch. It 
 ```
 Start the game at your browser with `http://localhost:8080/mines/index.html?c=28&d=50`. The `c` parameter specify the cell size in px, default is 28. The `d` parameter specify the difficulty in range 0..100, default is 50.
 
+Alternatively, if you have `electron` installed, then you don't need the server and browser. Simply launch the webapp at the `mines` directory with:
+```
+    electron ./main.js -c=28 -d=50
+```
+
 [![Screenshot](screenshots/mines-01-tn.png)](screenshots/mines-01.png) [![Screenshot](screenshots/mines-02-tn.png)](screenshots/mines-02.png)
 
 ## Build instruction ##
